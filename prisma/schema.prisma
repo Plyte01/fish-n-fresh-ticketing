@@ -1,0 +1,161 @@
+// This is your Prisma schema file.
+// Learn more at: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// ENUMS
+//
+
+/// Defines the lifecycle status of an event.
+enum EventStatus {
+  UPCOMING
+  LIVE
+  ENDED
+  CANCELLED
+  DRAFT
+}
+
+/// Defines the supported payment methods.
+enum PaymentMethod {
+  MPESA
+  PAYSTACK_CARD
+  PAYSTACK_MPESA
+}
+
+/// Defines the status of a payment transaction.
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+/// Defines the result of a check-in attempt.
+enum CheckinStatus {
+  SUCCESS
+  ALREADY_CHECKED_IN
+  INVALID_TICKET
+}
+
+//
+// MODELS
+//
+
+model Admin {
+  id          String            @id @default(uuid())
+  email       String            @unique
+  password    String
+  fullName    String
+  createdAt   DateTime          @default(now())
+  permissions AdminPermission[]
+  checkinLogs CheckinLog[]      // Tracks check-in activity performed by this admin
+}
+
+model Permission {
+  id          String            @id @default(uuid())
+  name        String            @unique /// e.g., MANAGE_EVENTS, SCAN_TICKETS
+  description String
+  admins      AdminPermission[]
+}
+
+model AdminPermission {
+  adminId      String
+  permissionId String
+  admin        Admin      @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([adminId, permissionId])
+}
+
+model SiteSettings {
+  id          String  @id @default("singleton") // Use a fixed ID to ensure only one row
+  bannerImage String?
+  themeColor  String?
+  aboutHtml   String?
+  metaTitle       String?
+  metaDescription String?
+  contactEmail    String?
+  contactPhone    String?
+  contactAddress  String?
+  contactHours    String?
+}
+
+model Event {
+  id              String       @id @default(uuid())
+  name            String
+  startDate       DateTime     /// Event start date and time
+  endDate         DateTime     /// Event end date and time
+  venue           String
+  price           Float
+  isFeatured      Boolean     @default(false)
+  status          EventStatus  @default(DRAFT)
+  bannerImage     String?      /// Optional field for homepage visuals
+  themeColor      String?      /// Optional field for homepage visuals
+  aboutHtml       String?      /// Optional field for detailed description
+  metaTitle       String?      /// Optional field for SEO
+  metaDescription String?      /// Optional field for SEO
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  tickets         Ticket[]
+  payments        Payment[]
+}
+
+model Ticket {
+  id          String       @id @default(uuid())
+  reference   String       @unique @default(cuid()) /// Short readable ID for display (e.g., TCK_1234)
+  ticketCode  String       @unique /// Alphanumeric code shown on ticket & sent via SMS
+  qrCodeUrl   String?      /// Generated and stored QR image link
+  checkedIn   Boolean      @default(false)
+  issuedAt    DateTime     @default(now())
+  phone       String
+  email       String?      /// Optional if user prefers SMS-only ticket delivery
+
+  eventId     String
+  event       Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  paymentId   String       @unique
+  payment     Payment      @relation(fields: [paymentId], references: [id])
+
+  checkinLogs CheckinLog[]
+
+  @@index([eventId, phone])
+  @@index([ticketCode, eventId])
+}
+
+model Payment {
+  id         String         @id @default(uuid())
+  reference  String         @unique /// M-Pesa code, Paystack ref, etc.
+  amount     Float
+  method     PaymentMethod
+  status     PaymentStatus  @default(PENDING)
+  phone      String?        /// For M-Pesa
+  email      String?        /// Optional contact
+  createdAt  DateTime       @default(now())
+
+  eventId    String
+  event      Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  ticket     Ticket?        /// One ticket per successful payment
+}
+
+model CheckinLog {
+  id         Int            @id @default(autoincrement())
+  status     CheckinStatus
+  timestamp  DateTime       @default(now())
+  notes      String?        /// e.g., "Manual code entry"
+
+  ticketId   String
+  ticket     Ticket         @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  adminId    String
+  admin      Admin          @relation(fields: [adminId], references: [id])
+}

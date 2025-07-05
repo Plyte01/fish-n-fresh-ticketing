@@ -1,0 +1,19 @@
+# Allow all user agents to crawl the site
+User-agent: *
+Allow: /
+
+# Disallow crawling of admin panel, API routes, and other private areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /payment/
+Disallow: /embed/
+Disallow: /tickets/render/
+
+# Allow specific public API endpoints that might be useful for discovery
+Allow: /api/public/
+
+# Location of the sitemap
+Sitemap: https://fishnfresh.com/sitemap.xml
+
+# Crawl delay to be respectful to server resources
+Crawl-delay: 1
