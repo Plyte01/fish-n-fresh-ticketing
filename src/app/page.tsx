@@ -29,8 +29,55 @@ async function FeaturedEvents() {
     }),
   ]);
 
+  // Generate dynamic structured data using database settings
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const organizationStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "FISH'N FRESH",
+    "url": baseUrl,
+    "logo": `${baseUrl}/Logo.png`,
+    "description": settings?.metaDescription || "Your premier destination for discovering and purchasing tickets to the most exciting events. Experience the best in entertainment, food, and culture.",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": settings?.contactPhone || "+254 700 123 456",
+      "contactType": "customer service",
+      "email": settings?.contactEmail || "info@fishnfresh.com"
+    },
+    "sameAs": [
+      // Add social media links when available
+    ]
+  };
+
+  const websiteStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "FISH'N FRESH",
+    "url": baseUrl,
+    "description": settings?.metaDescription || "Discover and buy tickets for the best events in town",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": `${baseUrl}/events?search={search_term_string}`
+      },
+      "query-input": "required name=search_term_string"
+    }
+  };
+
   return (
-    <div className="min-h-screen">
+    <>
+      {/* Dynamic Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationStructuredData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData) }}
+      />
+      
+      <div className="min-h-screen">
       <header className="relative h-80 md:h-96 text-white bg-gradient-to-br from-purple-900/80 via-blue-800/70 to-cyan-700/60 backdrop-blur-sm">
         {/* Animated geometric shapes - matching event header */}
         <div className="absolute inset-0 opacity-20">
@@ -104,6 +151,7 @@ async function FeaturedEvents() {
         )}
       </main>
     </div>
+    </>
   );
 }
 
@@ -132,57 +180,9 @@ function EventsSkeleton() {
 
 // Main page export uses Suspense
 export default function HomePage() {
-  // Generate structured data for the organization and website
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  const organizationStructuredData = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "FISH'N FRESH",
-    "url": baseUrl,
-    "logo": `${baseUrl}/fish-logo.png`,
-    "description": "Your premier destination for discovering and purchasing tickets to the most exciting events. Experience the best in entertainment, food, and culture.",
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "telephone": "+254 700 123 456",
-      "contactType": "customer service",
-      "email": "info@fishnfresh.com"
-    },
-    "sameAs": [
-      // Add social media links when available
-    ]
-  };
-
-  const websiteStructuredData = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "FISH'N FRESH",
-    "url": baseUrl,
-    "description": "Discover and buy tickets for the best events in town",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": {
-        "@type": "EntryPoint",
-        "urlTemplate": `${baseUrl}/events?search={search_term_string}`
-      },
-      "query-input": "required name=search_term_string"
-    }
-  };
-
   return (
-    <>
-      {/* Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationStructuredData) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData) }}
-      />
-      
-      <Suspense fallback={<EventsSkeleton />}>
-        <FeaturedEvents />
-      </Suspense>
-    </>
+    <Suspense fallback={<EventsSkeleton />}>
+      <FeaturedEvents />
+    </Suspense>
   );
 }

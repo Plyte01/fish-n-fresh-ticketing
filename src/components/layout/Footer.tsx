@@ -2,7 +2,8 @@
 'use client';
 
 import Link from "next/link";
-import { Fish, Mail, Phone, MapPin, Clock, Facebook, Twitter, Instagram } from "lucide-react";
+import Image from "next/image";
+import { Mail, Phone, MapPin, Clock, Facebook, Twitter, Instagram } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SiteSettings } from "@prisma/client";
 
@@ -51,7 +52,15 @@ export function Footer() {
             {/* Company Info */}
             <div className="space-y-4">
               <Link href="/" className="flex items-center space-x-2 hover:scale-105 transition-transform duration-300">
-                <Fish className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                <div className="relative w-8 h-8">
+                  <Image 
+                    src="/Logo.png" 
+                    alt="FISH'N FRESH Logo" 
+                    fill
+                    style={{ objectFit: 'contain' }}
+                    className="rounded"
+                  />
+                </div>
                 <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">FISH&apos;N FRESH</span>
               </Link>
               <p className="text-sm text-muted-foreground">

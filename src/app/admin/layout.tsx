@@ -3,7 +3,8 @@ import { getSession } from "@/lib/auth";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Fish, User } from "lucide-react";
+import { User } from "lucide-react";
+import Image from "next/image";
 import type { AdminPayload } from "@/lib/auth";
 
 // Admin Header Component
@@ -13,7 +14,13 @@ function AdminHeader({ session }: { session: AdminPayload }) {
       <div className="flex h-14 items-center px-4 md:px-4 pl-16 md:pl-4">
         {/* Logo/Brand */}
         <div className="flex items-center space-x-2">
-          <Fish className="h-6 w-6 text-purple-600" />
+          <Image 
+            src="/Logo.png" 
+            alt="FISH'N FRESH Logo" 
+            width={24} 
+            height={24} 
+            className="h-6 w-6"
+          />
           <span className="font-semibold text-lg bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
             Admin Dashboard
           </span>

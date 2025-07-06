@@ -2,8 +2,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Fish, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 export function Header() {
@@ -15,7 +16,16 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 hover:scale-105 transition-transform duration-300">
-            <Fish className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+            <div className="relative w-8 h-8">
+              <Image 
+                src="/Logo.png" 
+                alt="FISH'N FRESH Logo" 
+                fill
+                style={{ objectFit: 'contain' }}
+                className="rounded"
+                priority
+              />
+            </div>
             <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">FISH&apos;N FRESH</span>
           </Link>
 

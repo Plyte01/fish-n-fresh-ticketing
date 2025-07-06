@@ -68,7 +68,7 @@ export function generateOrganizationStructuredData(baseUrl: string, contactInfo?
     "@type": "Organization",
     "name": "FISH'N FRESH",
     "url": baseUrl,
-    "logo": `${baseUrl}/fish-logo.png`,
+    "logo": `${baseUrl}/Logo.png`,
     "description": "Your premier destination for discovering and purchasing tickets to the most exciting events. Experience the best in entertainment, food, and culture.",
     "contactPoint": {
       "@type": "ContactPoint",
