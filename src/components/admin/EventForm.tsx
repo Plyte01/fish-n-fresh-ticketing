@@ -43,8 +43,8 @@ export function EventForm({ onSuccess, initialData }: EventFormProps) {
     defaultValues: {
       name: initialData?.name ?? "",
       venue: initialData?.venue ?? "",
-      startDate: initialData?.startDate ? new Date(initialData.startDate) : new Date(),
-      endDate: initialData?.endDate ? new Date(initialData.endDate) : new Date(Date.now() + 2 * 60 * 60 * 1000),
+      startDate: initialData?.startDate ? new Date(initialData.startDate) : new Date(Date.now() + 24 * 60 * 60 * 1000), // Default to tomorrow
+      endDate: initialData?.endDate ? new Date(initialData.endDate) : new Date(Date.now() + 26 * 60 * 60 * 1000), // Default to tomorrow + 2 hours
       price: initialData?.price ?? 0,
       status: initialData?.status ?? "UPCOMING",
       isFeatured: initialData?.isFeatured ?? false,
@@ -59,16 +59,26 @@ export function EventForm({ onSuccess, initialData }: EventFormProps) {
       : '/api/admin/events';
     const method = isEditMode ? 'PATCH' : 'POST';
 
+    // Ensure dates are properly serialized as ISO strings
+    const payload = {
+      ...values,
+      startDate: values.startDate.toISOString(),
+      endDate: values.endDate.toISOString(),
+    };
+
     const promise = fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values),
+      body: JSON.stringify(payload),
     });
 
     toast.promise(promise, {
       loading: isEditMode ? 'Updating event...' : 'Creating event...',
       success: async (res) => {
-        if (!res.ok) throw new Error('Request failed.');
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Request failed.');
+        }
         onSuccess();
         if (!isEditMode) form.reset();
         return isEditMode

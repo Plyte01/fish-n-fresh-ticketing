@@ -52,9 +52,12 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    console.log('Received event creation request:', body);
+    
     const validation = createEventSchema.safeParse(body);
 
     if (!validation.success) {
+      console.error('Validation failed:', validation.error.errors);
       return NextResponse.json({ error: validation.error.errors }, { status: 400 });
     }
 
@@ -67,16 +70,20 @@ export async function POST(request: Request) {
         endDate: new Date(endDate),
         venue,
         price,
-        isFeatured,
+        isFeatured: isFeatured ?? false,
         bannerImage: bannerImage || null,
         aboutHtml: aboutHtml || null,
         status: 'UPCOMING', // Default status
       },
     });
 
+    console.log('Created event:', newEvent);
     return NextResponse.json(newEvent, { status: 201 });
   } catch (error) {
     console.error('Failed to create event:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal Server Error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
