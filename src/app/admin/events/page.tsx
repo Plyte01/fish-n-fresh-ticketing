@@ -64,17 +64,20 @@ export default function AdminEventsPage() {
   };
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Manage Events</h1>
-        <Button onClick={handleCreate}>Create New Event</Button>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Manage Events</h1>
+        <Button onClick={handleCreate} className="w-full sm:w-auto">
+          <span className="sm:hidden">New Event</span>
+          <span className="hidden sm:inline">Create New Event</span>
+        </Button>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => {
         setDialogOpen(open);
         if (!open) setEditingEvent(null);
       }}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingEvent ? "Edit Event" : "Create New Event"}</DialogTitle>
           </DialogHeader>
@@ -86,52 +89,69 @@ export default function AdminEventsPage() {
             />
           </div>
         </DialogContent>
-
       </Dialog>
 
-      <div className="border rounded-lg overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Event Name</TableHead>
-              <TableHead>Venue</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>End Date</TableHead>
-              <TableHead>Price (KES)</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+      <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-6">Loading events...</TableCell>
+                <TableHead className="min-w-[150px]">Event Name</TableHead>
+                <TableHead className="min-w-[120px]">Venue</TableHead>
+                <TableHead className="min-w-[100px]">Start Date</TableHead>
+                <TableHead className="min-w-[100px]">End Date</TableHead>
+                <TableHead className="min-w-[100px]">Price (KES)</TableHead>
+                <TableHead className="min-w-[80px]">Status</TableHead>
+                <TableHead className="text-right min-w-[120px]">Actions</TableHead>
               </TableRow>
-            ) : events.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-6">No events found.</TableCell>
-              </TableRow>
-            ) : (
-              events.map((event) => (
-                <TableRow key={event.id}>
-                  <TableCell className="font-medium">{event.name}</TableCell>
-                  <TableCell>{event.venue}</TableCell>
-                  <TableCell>{new Date(event.startDate).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(event.endDate).toLocaleDateString()}</TableCell>
-                  <TableCell>{event.price.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Badge variant={event.status === 'UPCOMING' ? 'default' : 'secondary'}>
-                      {event.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <EventActions event={event} onEdit={() => handleEdit(event)} onSuccess={fetchEvents} />
-                  </TableCell>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6">Loading events...</TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : events.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6">No events found.</TableCell>
+                </TableRow>
+              ) : (
+                events.map((event) => (
+                  <TableRow key={event.id}>
+                    <TableCell className="font-medium">
+                      <div className="max-w-[200px] truncate" title={event.name}>
+                        {event.name}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-[150px] truncate" title={event.venue}>
+                        {event.venue}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {new Date(event.startDate).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {new Date(event.endDate).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-sm">{event.price.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge variant={event.status === 'UPCOMING' ? 'default' : 'secondary'} className="text-xs">
+                        {event.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <EventActions 
+                        event={event} 
+                        onEdit={() => handleEdit(event)} 
+                        onSuccess={fetchEvents} 
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

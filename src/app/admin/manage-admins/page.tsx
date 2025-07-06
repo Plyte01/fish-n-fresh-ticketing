@@ -85,10 +85,13 @@ export default function ManageAdminsPage() {
   };
 
   return (
-    <div className="p-4 md:p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Manage Admins</h1>
-        <Button onClick={handleCreateClick}>Create New Admin</Button>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Manage Admins</h1>
+        <Button onClick={handleCreateClick} className="w-full sm:w-auto">
+          <span className="sm:hidden">New Admin</span>
+          <span className="hidden sm:inline">Create New Admin</span>
+        </Button>
       </div>
 
       <Dialog
@@ -98,7 +101,7 @@ export default function ManageAdminsPage() {
           if (!open) setEditingAdmin(null);
         }}
       >
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingAdmin ? 'Edit Admin' : 'Create New Admin'}</DialogTitle>
           </DialogHeader>
@@ -113,57 +116,67 @@ export default function ManageAdminsPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="border rounded-lg overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Full Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Permissions</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+      <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-6">
-                  Loading...
-                </TableCell>
+                <TableHead className="min-w-[150px]">Full Name</TableHead>
+                <TableHead className="min-w-[200px]">Email</TableHead>
+                <TableHead className="min-w-[200px]">Permissions</TableHead>
+                <TableHead className="min-w-[100px]">Actions</TableHead>
               </TableRow>
-            ) : admins.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-6">
-                  No admins found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              admins.map((admin) => (
-                <TableRow key={admin.id}>
-                  <TableCell>{admin.fullName}</TableCell>
-                  <TableCell>{admin.email}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {admin.permissions.map((p) => (
-                        <Badge key={p.permission.id} variant="secondary">
-                          {p.permission.name}
-                        </Badge>
-                      ))}
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-6">
+                    Loading...
                   </TableCell>
-                  <TableCell>
-                    <AdminActions
-                      admin={admin}
-                      currentAdminId={currentAdminId || undefined}
-                      onDelete={fetchData}
-                      onEdit={() => handleEditClick(admin)} // Pass edit handler as prop
-                    />
-                  </TableCell>
-
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : admins.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-6">
+                    No admins found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                admins.map((admin) => (
+                  <TableRow key={admin.id}>
+                    <TableCell>
+                      <div className="max-w-[150px] truncate" title={admin.fullName}>
+                        {admin.fullName}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-[200px] truncate" title={admin.email}>
+                        {admin.email}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1 max-w-[200px]">
+                        {admin.permissions.map((p) => (
+                          <Badge key={p.permission.id} variant="secondary" className="text-xs">
+                            {p.permission.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <AdminActions
+                        admin={admin}
+                        currentAdminId={currentAdminId || undefined}
+                        onDelete={fetchData}
+                        onEdit={() => handleEditClick(admin)} // Pass edit handler as prop
+                      />
+                    </TableCell>
+
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

@@ -69,78 +69,105 @@ export default function PaymentsPage() {
     if (!pagination || pagination.totalPages <= 1) return null;
 
     return (
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-          disabled={currentPage === 1}
-        >
-          Previous
-        </Button>
-        <span className="text-sm">
-          Page {pagination.page} of {pagination.totalPages}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
-          disabled={currentPage === pagination.totalPages}
-        >
-          Next
-        </Button>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
+        <div className="text-sm text-muted-foreground">
+          Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} payments
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <span className="text-sm whitespace-nowrap">
+            Page {pagination.page} of {pagination.totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+            disabled={currentPage === pagination.totalPages}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="p-4 md:p-8">
-      <h1 className="text-3xl font-bold mb-6">Payment Transactions</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <h1 className="text-2xl sm:text-3xl font-bold">Payment Transactions</h1>
       
-      <div className="mb-4">
+      <div className="w-full">
         <Input
           placeholder="Search by email, reference, or event name..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-sm"
+          className="max-w-full sm:max-w-sm"
         />
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Reference</TableHead>
-              <TableHead>Event</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Amount (KES)</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Date</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center h-24">Loading payments...</TableCell></TableRow>
-            ) : payments.length > 0 ? (
-              payments.map(payment => (
-                <TableRow key={payment.id}>
-                  <TableCell className="font-mono text-xs">{payment.reference}</TableCell>
-                  <TableCell>{payment.event.name}</TableCell>
-                  <TableCell>{payment.email}</TableCell>
-                  <TableCell>{payment.amount.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Badge variant={payment.status === 'SUCCESS' ? 'default' : 'destructive'}>
-                      {payment.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{new Date(payment.createdAt).toLocaleString()}</TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow><TableCell colSpan={6} className="text-center h-24">No payments found.</TableCell></TableRow>
-            )}
-          </TableBody>
-        </Table>
+      <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[120px]">Reference</TableHead>
+                <TableHead className="min-w-[150px]">Event</TableHead>
+                <TableHead className="min-w-[180px]">Email</TableHead>
+                <TableHead className="min-w-[100px]">Amount (KES)</TableHead>
+                <TableHead className="min-w-[80px]">Status</TableHead>
+                <TableHead className="min-w-[140px]">Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow><TableCell colSpan={6} className="text-center h-24">Loading payments...</TableCell></TableRow>
+              ) : payments.length > 0 ? (
+                payments.map(payment => (
+                  <TableRow key={payment.id}>
+                    <TableCell className="font-mono text-xs">
+                      <div className="max-w-[120px] truncate" title={payment.reference}>
+                        {payment.reference}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-[150px] truncate" title={payment.event.name}>
+                        {payment.event.name}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-[180px] truncate" title={payment.email ?? undefined}>
+                        {payment.email}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{payment.amount.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge variant={payment.status === 'SUCCESS' ? 'default' : 'destructive'} className="text-xs">
+                        {payment.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm">
+                      <div className="max-w-[140px]">
+                        {new Date(payment.createdAt).toLocaleDateString()}
+                        <br />
+                        <span className="text-muted-foreground">
+                          {new Date(payment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow><TableCell colSpan={6} className="text-center h-24">No payments found.</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
       {renderPaginationButtons()}
     </div>

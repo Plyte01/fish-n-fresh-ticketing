@@ -10,18 +10,18 @@ import type { AdminPayload } from "@/lib/auth";
 // Admin Header Component
 function AdminHeader({ session }: { session: AdminPayload }) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-14 items-center px-4 md:px-4 pl-16 md:pl-4">
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-14 items-center px-4 pl-16 md:pl-4">
         {/* Logo/Brand */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 min-w-0 flex-shrink">
           <Image 
             src="/Logo.png" 
             alt="FISH'N FRESH Logo" 
             width={24} 
             height={24} 
-            className="h-6 w-6"
+            className="h-6 w-6 flex-shrink-0"
           />
-          <span className="font-semibold text-lg bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+          <span className="font-semibold text-sm sm:text-lg bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent truncate">
             Admin Dashboard
           </span>
         </div>
@@ -30,18 +30,28 @@ function AdminHeader({ session }: { session: AdminPayload }) {
         <div className="flex-1" />
 
         {/* Right side */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           {/* User Profile */}
-          <div className="flex items-center space-x-2">
+          <div className="hidden sm:flex items-center space-x-2">
             <div className="flex items-center space-x-2 px-3 py-1 rounded-md bg-muted">
               <User className="h-4 w-4" />
-              <span className="text-sm font-medium">{session.email || 'Admin'}</span>
+              <span className="text-sm font-medium truncate max-w-[120px]">{session.email || 'Admin'}</span>
+            </div>
+          </div>
+
+          {/* Mobile User Icon */}
+          <div className="sm:hidden flex items-center">
+            <div className="flex items-center px-2 py-1 rounded-md bg-muted">
+              <User className="h-4 w-4" />
             </div>
           </div>
 
           {/* Back to Site */}
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/">View Site</Link>
+          <Button variant="outline" size="sm" asChild className="text-xs sm:text-sm">
+            <Link href="/">
+              <span className="hidden sm:inline">View Site</span>
+              <span className="sm:hidden">Site</span>
+            </Link>
           </Button>
         </div>
       </div>
@@ -98,10 +108,12 @@ export default async function AdminLayout({
       
       <div className="flex flex-1">
         <AdminSidebar permissions={session.permissions} />
-        {/* Main content area with left margin only on desktop to account for expanded sidebar */}
-        <div className="flex flex-1 flex-col md:ml-64">
-          <main className="flex-1 overflow-auto p-4 sm:px-6 sm:py-4 md:p-8">
-            {children}
+        {/* Main content area with fixed left margin for permanent sidebar */}
+        <div className="flex flex-1 flex-col ml-0 md:ml-64 min-w-0">
+          <main className="flex-1 overflow-auto p-2 sm:p-4 md:p-6 lg:p-8">
+            <div className="mx-auto max-w-7xl">
+              {children}
+            </div>
           </main>
           
           {/* Admin Footer */}
