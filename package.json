@@ -81,6 +81,7 @@
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.17",
     "@types/papaparse": "^5.3.16",
+    "@types/puppeteer": "^7.0.4",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",

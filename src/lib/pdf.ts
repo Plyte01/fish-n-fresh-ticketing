@@ -5,65 +5,173 @@ import { Ticket, Event } from '@prisma/client';
 
 type TicketWithEvent = Ticket & { event: Event };
 
-async function generateFallbackPdf(ticket: TicketWithEvent): Promise<Buffer> {
-  // Simple HTML to PDF conversion without Chromium
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Ticket - ${ticket.event.name}</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-        .ticket { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header { text-align: center; border-bottom: 2px solid #e0e0e0; padding-bottom: 20px; margin-bottom: 20px; }
-        .event-name { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 10px; }
-        .ticket-info { margin: 20px 0; }
-        .info-row { display: flex; justify-content: space-between; margin: 10px 0; }
-        .label { font-weight: bold; color: #666; }
-        .value { color: #333; }
-        .qr-section { text-align: center; margin-top: 30px; }
-        .ticket-code { font-size: 18px; font-weight: bold; letter-spacing: 2px; }
-      </style>
-    </head>
-    <body>
-      <div class="ticket">
-        <div class="header">
-          <div class="event-name">${ticket.event.name}</div>
-          <div style="color: #666;">Event Ticket</div>
+/**
+ * Generates high-quality ticket HTML with better styling
+ */
+function generateTicketHTML(ticket: TicketWithEvent): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket - ${ticket.event.name}</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        background: #f8fafc;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .ticket-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+      }
+      .ticket-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+      .event-name {
+        font-size: 28px;
+        font-weight: bold;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+      }
+      .ticket-subtitle {
+        font-size: 16px;
+        opacity: 0.9;
+      }
+      .ticket-body {
+        padding: 30px;
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 25px;
+      }
+      .info-item {
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+      }
+      .info-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        color: #64748b;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+      }
+      .info-value {
+        font-size: 16px;
+        color: #1e293b;
+        font-weight: 500;
+      }
+      .ticket-code-section {
+        text-align: center;
+        padding: 25px;
+        background: #f1f5f9;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+      .ticket-code {
+        font-size: 24px;
+        font-weight: bold;
+        color: #1e293b;
+        letter-spacing: 3px;
+        font-family: 'Courier New', monospace;
+        margin-bottom: 10px;
+      }
+      .ticket-instructions {
+        color: #64748b;
+        font-size: 14px;
+        margin-top: 15px;
+      }
+      .ticket-footer {
+        padding: 20px 30px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        font-size: 12px;
+        color: #64748b;
+        text-align: center;
+      }
+      @media print {
+        body { background: white; padding: 0; }
+        .ticket-container { box-shadow: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ticket-container">
+      <div class="ticket-header">
+        <div class="event-name">${ticket.event.name}</div>
+        <div class="ticket-subtitle">Event Ticket</div>
+      </div>
+      
+      <div class="ticket-body">
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Venue</div>
+            <div class="info-value">${ticket.event.venue}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Date</div>
+            <div class="info-value">${new Date(ticket.event.startDate).toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Time</div>
+            <div class="info-value">${new Date(ticket.event.startDate).toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Price</div>
+            <div class="info-value">KES ${ticket.event.price.toFixed(2)}</div>
+          </div>
         </div>
-        <div class="ticket-info">
-          <div class="info-row">
-            <span class="label">Venue:</span>
-            <span class="value">${ticket.event.venue}</span>
+        
+        <div class="ticket-code-section">
+          <div class="info-label">Ticket Reference</div>
+          <div class="info-value" style="margin-bottom: 15px;">${ticket.reference}</div>
+          
+          <div class="info-label">Admission Code</div>
+          <div class="ticket-code">${ticket.ticketCode}</div>
+          
+          <div class="ticket-instructions">
+            Present this ticket at the venue for entry.<br>
+            Keep this ticket safe and arrive early for smooth check-in.
           </div>
-          <div class="info-row">
-            <span class="label">Date:</span>
-            <span class="value">${new Date(ticket.event.startDate).toLocaleDateString()}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Time:</span>
-            <span class="value">${new Date(ticket.event.startDate).toLocaleTimeString()}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Price:</span>
-            <span class="value">KES ${ticket.event.price.toFixed(2)}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Reference:</span>
-            <span class="value">${ticket.reference}</span>
-          </div>
-        </div>
-        <div class="qr-section">
-          <div class="ticket-code">Ticket Code: ${ticket.ticketCode}</div>
-          <p style="color: #666; margin-top: 10px;">Present this ticket at the venue for entry</p>
         </div>
       </div>
-    </body>
-    </html>
-  `;
+      
+      <div class="ticket-footer">
+        Generated on ${new Date().toLocaleDateString()} • FISH'N FRESH Ticketing
+      </div>
+    </div>
+  </body>
+</html>`;
+}
 
-  // Return HTML as Buffer (in a real fallback, you'd use a different PDF library)
+async function generateFallbackPdf(ticket: TicketWithEvent): Promise<Buffer> {
+  // Use the high-quality HTML template for fallback
+  const html = generateTicketHTML(ticket);
+  
+  // Return HTML as Buffer (could be enhanced with a lightweight PDF library)
   return Buffer.from(html, 'utf-8');
 }
 
@@ -78,18 +186,8 @@ export async function generateTicketPdf({
   let browser = null;
 
   try {
-    const baseUrl = process.env.BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const url = `${baseUrl}/api/tickets/render/${ticket.ticketCode}`;
-    
-    const response = await fetch(url);
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Ticket HTML fetch failed:", errorText);
-      console.warn('Using fallback PDF generation due to HTML fetch failure');
-      return await generateFallbackPdf(ticket);
-    }
-
-    const html = await response.text();
+    // Generate high-quality HTML directly (no need to fetch from API)
+    const html = generateTicketHTML(ticket);
 
     // Try to use Chromium for PDF generation
     try {
@@ -110,7 +208,14 @@ export async function generateTicketPdf({
       });
 
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      
+      // Set content and wait for everything to load
+      await page.setContent(html, { 
+        waitUntil: ['domcontentloaded', 'networkidle0'] 
+      });
+
+      // Emulate screen media for better styling
+      await page.emulateMediaType('screen');
 
       const pdfBuffer = await page.pdf({
         format: 'A4',
