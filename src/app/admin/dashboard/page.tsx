@@ -6,6 +6,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Ticket, Calendar } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { PDFTestButton } from '@/components/admin/PDFTestButton';
 
 // Define the type for our dashboard data
 type DashboardData = {
@@ -141,6 +142,16 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* PDF Test Button - Temporary Component */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg sm:text-xl">PDF Generation Test</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PDFTestButton />
+        </CardContent>
+      </Card>
     </div>
   );
 }

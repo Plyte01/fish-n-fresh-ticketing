@@ -1,248 +1,216 @@
 // src/lib/pdf.ts
-import puppeteer from 'puppeteer-core';
+
+import puppeteer, { Browser } from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import { Ticket, Event } from '@prisma/client';
+import qrcode from 'qrcode';
+import { jsPDF } from 'jspdf';
 
 type TicketWithEvent = Ticket & { event: Event };
 
-/**
- * Generates high-quality ticket HTML with better styling
- */
-function generateTicketHTML(ticket: TicketWithEvent): string {
-  return `<!DOCTYPE html>
-<html lang="en">
+function generateTicketHTML(ticket: TicketWithEvent, qrCodeDataURL: string): string {
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket - ${ticket.event.name}</title>
+    <meta charset="UTF-8" />
+    <title>${ticket.event.name} – Ticket</title>
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { 
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-        background: #f8fafc;
-        padding: 20px;
-        line-height: 1.6;
+      body {
+        font-family: 'Segoe UI', sans-serif;
+        padding: 40px;
+        background-color: #f9fafb;
+        color: #1f2937;
       }
-      .ticket-container {
-        max-width: 600px;
-        margin: 0 auto;
-        background: white;
+      .ticket {
+        width: 100%;
+        max-width: 1000px;
+        margin: auto;
+        background: #fff;
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        overflow: hidden;
-        border: 1px solid #e2e8f0;
+        box-shadow: 0 0 30px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: row;
       }
-      .ticket-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+      .left {
+        flex: 2;
+        padding: 40px;
+      }
+      .right {
+        flex: 1;
+        background: #f1f5f9;
         padding: 30px;
-        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
       }
       .event-name {
-        font-size: 28px;
-        font-weight: bold;
-        margin-bottom: 8px;
-        letter-spacing: -0.5px;
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: #334155;
       }
-      .ticket-subtitle {
-        font-size: 16px;
-        opacity: 0.9;
-      }
-      .ticket-body {
-        padding: 30px;
-      }
-      .info-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-bottom: 25px;
-      }
-      .info-item {
-        padding: 15px;
-        background: #f8fafc;
-        border-radius: 8px;
-        border-left: 4px solid #667eea;
-      }
-      .info-label {
+      .label {
         font-size: 12px;
-        text-transform: uppercase;
-        color: #64748b;
         font-weight: 600;
-        letter-spacing: 0.5px;
-        margin-bottom: 5px;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 4px;
       }
-      .info-value {
+      .value {
         font-size: 16px;
+        margin-bottom: 20px;
         color: #1e293b;
-        font-weight: 500;
       }
-      .ticket-code-section {
+      .code-box {
         text-align: center;
-        padding: 25px;
-        background: #f1f5f9;
+        margin-top: 30px;
+        background: #e0f2fe;
+        padding: 16px;
         border-radius: 8px;
-        margin: 20px 0;
       }
       .ticket-code {
         font-size: 24px;
+        font-family: monospace;
+        color: #0284c7;
         font-weight: bold;
-        color: #1e293b;
-        letter-spacing: 3px;
-        font-family: 'Courier New', monospace;
-        margin-bottom: 10px;
+        letter-spacing: 2px;
       }
-      .ticket-instructions {
-        color: #64748b;
-        font-size: 14px;
-        margin-top: 15px;
-      }
-      .ticket-footer {
-        padding: 20px 30px;
-        background: #f8fafc;
-        border-top: 1px solid #e2e8f0;
-        font-size: 12px;
-        color: #64748b;
+      .qr {
         text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
-      @media print {
-        body { background: white; padding: 0; }
-        .ticket-container { box-shadow: none; }
+      .qr img {
+        border: 2px solid #94a3b8;
+        border-radius: 8px;
+        padding: 5px;
+        background: #fff;
+        width: 130px;
+        height: 130px;
+        margin: 10px auto;
+      }
+      .footer {
+        text-align: center;
+        font-size: 12px;
+        color: #94a3b8;
+        margin-top: 40px;
       }
     </style>
   </head>
   <body>
-    <div class="ticket-container">
-      <div class="ticket-header">
+    <div class="ticket">
+      <div class="left">
         <div class="event-name">${ticket.event.name}</div>
-        <div class="ticket-subtitle">Event Ticket</div>
-      </div>
-      
-      <div class="ticket-body">
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Venue</div>
-            <div class="info-value">${ticket.event.venue}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Date</div>
-            <div class="info-value">${new Date(ticket.event.startDate).toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Time</div>
-            <div class="info-value">${new Date(ticket.event.startDate).toLocaleTimeString('en-US', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Price</div>
-            <div class="info-value">KES ${ticket.event.price.toFixed(2)}</div>
-          </div>
-        </div>
-        
-        <div class="ticket-code-section">
-          <div class="info-label">Ticket Reference</div>
-          <div class="info-value" style="margin-bottom: 15px;">${ticket.reference}</div>
-          
-          <div class="info-label">Admission Code</div>
+
+        <div class="label">Venue</div>
+        <div class="value">${ticket.event.venue}</div>
+
+        <div class="label">Date</div>
+        <div class="value">${new Date(ticket.event.startDate).toLocaleDateString('en-US')}</div>
+
+        <div class="label">Time</div>
+        <div class="value">${new Date(ticket.event.startDate).toLocaleTimeString('en-US')}</div>
+
+        <div class="label">Price</div>
+        <div class="value">KES ${ticket.event.price.toFixed(2)}</div>
+
+        <div class="label">Reference</div>
+        <div class="value">${ticket.reference}</div>
+
+        <div class="code-box">
+          <div class="label">Admission Code</div>
           <div class="ticket-code">${ticket.ticketCode}</div>
-          
-          <div class="ticket-instructions">
-            Present this ticket at the venue for entry.<br>
-            Keep this ticket safe and arrive early for smooth check-in.
-          </div>
         </div>
       </div>
-      
-      <div class="ticket-footer">
-        Generated on ${new Date().toLocaleDateString()} • FISH'N FRESH Ticketing
+      <div class="right">
+        <div class="qr">
+          <div class="label">Scan to Verify</div>
+          <img src="${qrCodeDataURL}" alt="QR Code" />
+        </div>
+        <div class="footer">
+          Present this ticket at the venue for entry.<br/>
+          Generated on ${new Date().toLocaleDateString()}
+        </div>
       </div>
     </div>
   </body>
-</html>`;
+  </html>
+  `;
 }
 
-async function generateFallbackPdf(ticket: TicketWithEvent): Promise<Buffer> {
-  // Use the high-quality HTML template for fallback
-  const html = generateTicketHTML(ticket);
-  
-  // Return HTML as Buffer (could be enhanced with a lightweight PDF library)
-  return Buffer.from(html, 'utf-8');
+async function generateFallbackPdf(ticket: TicketWithEvent, qrCodeDataURL?: string): Promise<Buffer> {
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a6' });
+
+  pdf.setFontSize(12);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('FISH\'N FRESH TICKET', 15, 15);
+
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(`Event: ${ticket.event.name}`, 15, 25);
+  pdf.text(`Venue: ${ticket.event.venue}`, 15, 32);
+  pdf.text(`Date: ${new Date(ticket.event.startDate).toLocaleDateString()}`, 15, 39);
+  pdf.text(`Time: ${new Date(ticket.event.startDate).toLocaleTimeString()}`, 15, 46);
+  pdf.text(`Price: KES ${ticket.event.price.toFixed(2)}`, 15, 53);
+  pdf.text(`Code: ${ticket.ticketCode}`, 15, 60);
+  //pdf.text(`Ref: ${ticket.reference}`, 15, 67);
+
+  if (qrCodeDataURL) {
+    // A6 page is 105mm x 148mm, QR code is 40x40mm
+    // Center horizontally: (105 - 40) / 2 = 32.5mm
+    // Position vertically: 75mm (keeping some space from text above)
+    pdf.addImage(qrCodeDataURL, 'PNG', 32.5, 75, 40, 40);
+    
+    // Add centered label above QR code
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('SCAN TO VERIFY', 52.5, 72, { align: 'center' });
+  }
+
+  return Buffer.from(pdf.output('arraybuffer'));
 }
 
 export async function generateTicketPdf({
   ticket,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  qrCodeDataURL: _, // Parameter kept for API compatibility
+  qrCodeDataURL,
 }: {
   ticket: TicketWithEvent;
-  qrCodeDataURL: string;
+  qrCodeDataURL?: string;
 }): Promise<Buffer> {
-  let browser = null;
+  let browser: Browser | null = null;
+  let finalQr = qrCodeDataURL;
 
   try {
-    // Generate high-quality HTML directly (no need to fetch from API)
-    const html = generateTicketHTML(ticket);
-
-    // Try to use Chromium for PDF generation
-    try {
-      browser = await puppeteer.launch({
-        args: [
-          ...chromium.args,
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-web-security',
-          '--disable-gpu',
-          '--single-process',
-          '--no-zygote'
-        ],
-        executablePath: await chromium.executablePath(),
-        headless: true,
-        defaultViewport: { width: 1920, height: 1080 },
-      });
-
-      const page = await browser.newPage();
-      
-      // Set content and wait for everything to load
-      await page.setContent(html, { 
-        waitUntil: ['domcontentloaded', 'networkidle0'] 
-      });
-
-      // Emulate screen media for better styling
-      await page.emulateMediaType('screen');
-
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '20px',
-          right: '20px',
-          bottom: '20px',
-          left: '20px',
-        },
-      });
-
-      return Buffer.from(pdfBuffer);
-    } catch (chromiumError) {
-      console.warn('Chromium PDF generation failed, using fallback:', chromiumError);
-      return await generateFallbackPdf(ticket);
+    if (!finalQr) {
+      finalQr = await qrcode.toDataURL(ticket.ticketCode);
     }
-  } catch (error) {
-    console.error('PDF generation error:', error);
-    return await generateFallbackPdf(ticket);
+
+    const html = generateTicketHTML(ticket, finalQr);
+
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.emulateMediaType('screen');
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      landscape: true,
+      printBackground: true,
+      margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' },
+    });
+
+    return Buffer.from(pdfBuffer);
+  } catch (err) {
+    console.warn('🧾 Falling back to jsPDF fallback:', err);
+    return await generateFallbackPdf(ticket, finalQr);
   } finally {
-    if (browser) {
-      try {
-        await browser.close();
-      } catch (closeError) {
-        console.warn('Failed to close browser:', closeError);
-      }
-    }
+    if (browser) await browser.close();
   }
 }
